@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Bell — Playoff Predictor</title>
+<style>
+:root{--green:#28c75b;--ink:#18221e;--muted:#76817b;--line:#e3e9e5;--paper:#fff;--bg:#f3f6f4;--soft:#eaf7ee}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{background:#fff;border-top:5px solid var(--green);padding:20px max(18px,calc((100vw - 1220px)/2));display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:baseline;gap:10px}.brand strong{font-size:25px}.brand span{color:var(--muted)}
+main{max-width:1220px;margin:24px auto;padding:0 18px 45px}.hero{display:flex;justify-content:space-between;align-items:end;gap:18px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:30px;line-height:1.1;margin:0 0 7px;letter-spacing:-.8px}.sub{color:var(--muted);margin:0}
+.pills{display:flex;gap:8px;flex-wrap:wrap}.pill{background:#fff;border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-size:13px;color:#445149}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:18px 0}button{font:inherit;cursor:pointer}
+.action{background:#fff;border:1px solid #cfd8d2;border-radius:9px;padding:9px 13px;color:#34433a}.action:hover{border-color:var(--green);color:#126633}.action.primary{background:var(--ink);color:#fff;border-color:var(--ink)}.hint{font-size:12px;color:var(--muted);margin-left:auto}
+.layout{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.9fr);gap:18px;align-items:start}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 2px 8px #122a1b08}
+.panel-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}.panel-head h2{font-size:18px;margin:0}.panel-head small{color:var(--muted)}
+.week{padding:15px 18px;border-bottom:1px solid var(--line)}.week:last-child{border-bottom:0}
+.week-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}.week-title h3{margin:0;font-size:15px}.week-title span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.matchups{display:grid;grid-template-columns:1fr 1fr;gap:9px}.game{border:1px solid var(--line);border-radius:11px;padding:10px;min-width:0}.game-title{color:var(--muted);font-size:11px;margin-bottom:7px}
+.pick{border:1px solid transparent;background:#f7f9f7;border-radius:8px;width:100%;padding:8px 9px;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px;color:var(--ink)}
+.pick:hover{border-color:#b8dfc4}.pick.selected{background:var(--soft);border-color:#9bd7ad;color:#145b2d;font-weight:650}.pick .pts{color:var(--muted);font-size:12px;white-space:nowrap}
+.tag{display:inline-block;background:#e6f6ea;color:#21723a;border-radius:99px;padding:2px 7px;font-size:10px;margin-left:5px}
+.side{display:grid;gap:18px}.div-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:13px}
+.division{border:1px solid var(--line);border-radius:10px;overflow:hidden}.division h3{margin:0;padding:10px 11px;background:#f7f9f7;font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:12px}th{text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;padding:8px 6px;border-bottom:1px solid var(--line)}td{padding:8px 6px;border-bottom:1px solid #edf0ee;white-space:nowrap}tr:last-child td{border-bottom:0}
+.rank{font-weight:750;color:#526158;width:24px}.teamname{font-weight:650}.seed-status{font-size:9px;border-radius:99px;background:#e9f6ed;color:#21723a;padding:3px 6px}.out{background:#f0f1f1;color:#68716c}
+.note{margin:0 15px 14px;background:#f7f9f7;border-radius:9px;padding:10px 11px;color:#68756d;font-size:12px}
+.bracket{padding:14px;display:grid;gap:12px}.round h3{margin:0 0 8px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.08em}
+.bracket-game{border:1px solid var(--line);border-radius:9px;padding:9px 10px;margin-bottom:7px;font-size:12px;display:flex;justify-content:space-between;gap:8px}.bye{background:#f6fbf7;border-color:#ccebd4}
+.rules{padding:13px 16px;color:#536158;font-size:12px}.rules strong{color:var(--ink)}.rules ul{margin:8px 0 0;padding-left:18px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}@media(max-width:640px){header{padding:15px}.matchups,.div-grid{grid-template-columns:1fr}main{padding:0 11px 30px}.hint{width:100%;margin:0}.panel-head{padding:13px}.week{padding:12px}}
+</style>
+</head>
+<body>
+<header><div class="brand"><strong>Scoreboard</strong><span>The Bell</span></div><span style="color:#68756d;font-size:13px">Fantasy playoff scenario builder</span></header>
+<main>
+  <section class="hero">
+    <div><h1>Playoff Predictor</h1><p class="sub">Pick winners for Weeks 12–14 to see the standings and playoff field change.</p></div>
+    <div class="pills"><span class="pill">12 teams</span><span class="pill">2 divisions</span><span class="pill">7 playoff spots</span><span class="pill">H2H tiebreaker</span></div>
+  </section>
+  <div class="toolbar">
+    <button class="action primary" id="projected">Fill projected winners</button>
+    <button class="action" id="clear">Clear picks</button>
+    <span class="hint">Unpicked games don’t affect standings. Click a picked team again to clear it.</span>
+  </div>
+  <div class="layout">
+    <section class="panel"><div class="panel-head"><h2>Choose matchup winners</h2><small>Click a team to add its win</small></div><div id="schedule"></div></section>
+    <aside class="side">
+      <section class="panel">
+        <div class="panel-head"><h2 id="standingsTitle">Current division standings · Week 11</h2><small id="pickCount">0 picks</small></div>
+        <div class="div-grid" id="divisionTables"></div>
+        <p class="note">Standings are ranked within each division by record, then head-to-head and points for. Division winners take the first two playoff seeds; the next five seeds go to the best remaining records.</p>
+      </section>
+      <section class="panel"><div class="panel-head"><h2>Projected playoff bracket</h2><small>Based on current picks</small></div><div class="bracket" id="bracket"></div></section>
+      <section class="panel">
+        <div class="panel-head"><h2>League format</h2></div>
+        <div class="rules"><strong>Playoffs:</strong> 7 teams · one-week opening and semifinal rounds · two-week championship
+          <ul><li>Regular season ends after Week 14.</li><li>Top seed receives a first-round bye.</li><li>Bracket reseeding is off.</li><li>Playoff seeding tiebreaker: head-to-head record.</li></ul>
+        </div>
+      </section>
+    </aside>
+  </div>
+</main>
+<script>
+const teams={
+ Baja:{name:"Baja Blastoise",emoji:"🐉",div:"Chalupa",w:9,l:2,pf:1413.44,pa:1250.34,dw:5,dl:1},
+ Gordita:{name:"Gordita Gng",emoji:"🌮",div:"Chalupa",w:8,l:3,pf:1443.68,pa:1278.92,dw:4,dl:2},
+ Water:{name:"Water Kupp",emoji:"🥤",div:"Chalupa",w:8,l:3,pf:1359.90,pa:1234.74,dw:4,dl:2},
+ Luxe:{name:"The Luxe Boxers",emoji:"🥊",div:"Chalupa",w:4,l:7,pf:1335.30,pa:1361.62,dw:2,dl:4},
+ SheJed:{name:"She jed on my york",emoji:"🥤",div:"Chalupa",w:3,l:8,pf:1122.24,pa:1284.68,dw:2,dl:5},
+ Horton:{name:"Horton Hears A Jew",emoji:"🐻",div:"Chalupa",w:3,l:8,pf:1087.18,pa:1247.26,dw:2,dl:5},
+ Diablo:{name:"Diablo Sauce Gardner",emoji:"🌶️",div:"Crunchwrap",w:10,l:1,pf:1321.94,pa:1086.28,dw:7,dl:0},
+ Tyler:{name:"Tyler",emoji:"🤠",div:"Crunchwrap",w:8,l:3,pf:1425.70,pa:1142.42,dw:5,dl:1},
+ Costco:{name:"Costco Hot Dogs",emoji:"🌭",div:"Crunchwrap",w:6,l:5,pf:1470.04,pa:1348.56,dw:3,dl:2},
+ Twellium:{name:"Twellium Easy Always",emoji:"🟢",div:"Crunchwrap",w:3,l:8,pf:1271.42,pa:1361.18,dw:1,dl:5},
+ Feins:{name:"FE!NS FLEAS",emoji:"🐶",div:"Crunchwrap",w:2,l:9,pf:951.98,pa:1393.92,dw:2,dl:5},
+ Cookie:{name:"The Cookie Monsters",emoji:"🍪",div:"Crunchwrap",w:2,l:9,pf:1051.26,pa:1264.16,dw:1,dl:6}
+};
+const historical=[
+["Baja","Feins"],["Costco","Twellium"],["Water","Horton"],["Luxe","SheJed"],["Tyler","Gordita"],["Diablo","Cookie"],
+["Baja","Costco"],["Diablo","Twellium"],["Luxe","Water"],["Tyler","Feins"],["Gordita","Cookie"],["SheJed","Horton"],
+["Baja","Luxe"],["Feins","Cookie"],["Tyler","Costco"],["Twellium","Horton"],["Water","SheJed"],["Gordita","Diablo"],
+["Baja","Horton"],["Gordita","SheJed"],["Diablo","Tyler"],["Twellium","Cookie"],["Costco","Luxe"],["Water","Feins"],
+["Baja","SheJed"],["Horton","Costco"],["Luxe","Twellium"],["Gordita","Water"],["Diablo","Cookie"],["Tyler","Feins"],
+["Baja","Cookie"],["Diablo","Twellium"],["Tyler","Horton"],["Luxe","Feins"],["Water","Gordita"],["Costco","SheJed"],
+["Baja","Gordita"],["Feins","Cookie"],["Horton","Luxe"],["Costco","Water"],["Diablo","SheJed"],["Tyler","Twellium"],
+["Twellium","Baja"],["Costco","Feins"],["Tyler","SheJed"],["Water","Cookie"],["Diablo","Luxe"],["Gordita","Horton"],
+["Baja","Tyler"],["Cookie","Luxe"],["Gordita","Costco"],["SheJed","Horton"],["Water","Twellium"],["Diablo","Feins"],
+["Horton","Baja"],["Tyler","Costco"],["Diablo","Twellium"],["Gordita","SheJed"],["Water","Luxe"],["Cookie","Feins"],
+["Baja","Luxe"],["Water","Tyler"],["SheJed","Feins"],["Diablo","Horton"],["Gordita","Twellium"],["Costco","Cookie"]
+];
+const schedule=[
+{week:12,source:"ESPN projections",games:[
+{a:"Water",b:"Baja",sa:120.4,sb:135.9},{a:"Diablo",b:"Costco",sa:106.2,sb:102.9},
+{a:"Horton",b:"Cookie",sa:99.5,sb:126.5},{a:"SheJed",b:"Twellium",sa:112.2,sb:132.6},
+{a:"Tyler",b:"Luxe",sa:123.3,sb:132.3},{a:"Feins",b:"Gordita",sa:98.5,sb:132.0}]},
+{week:13,source:"Season average estimates",games:[
+{a:"Baja",b:"Horton"},{a:"Luxe",b:"Gordita"},{a:"SheJed",b:"Cookie"},
+{a:"Diablo",b:"Water"},{a:"Costco",b:"Tyler"},{a:"Feins",b:"Twellium"}]},
+{week:14,source:"Season average estimates",games:[
+{a:"Baja",b:"Diablo"},{a:"SheJed",b:"Gordita"},{a:"Water",b:"Luxe"},
+{a:"Tyler",b:"Cookie"},{a:"Twellium",b:"Costco"},{a:"Horton",b:"Feins"}]}
+];
+const avg=id=>teams[id].pf/11,fmt=n=>Number(n).toFixed(1);
+schedule.forEach(w=>w.games.forEach(g=>{if(g.sa==null){g.sa=avg(g.a);g.sb=avg(g.b)}g.pick=null}));
+
+function renderSchedule(){
+ const root=document.getElementById("schedule");root.innerHTML="";
+ schedule.forEach(week=>{
+  const section=document.createElement("section");section.className="week";
+  section.innerHTML=`<div class="week-title"><h3>Week ${week.week}</h3><span>${week.source}</span></div><div class="matchups"></div>`;
+  const grid=section.querySelector(".matchups");
+  week.games.forEach((g,idx)=>{
+   const box=document.createElement("div");box.className="game";
+   box.innerHTML=`<div class="game-title">Matchup ${idx+1}</div>${[g.a,g.b].map(id=>{
+    const score=id===g.a?g.sa:g.sb;
+    return `<button class="pick ${g.pick===id?"selected":""}" data-week="${week.week}" data-idx="${idx}" data-team="${id}">
+      <span>${teams[id].emoji} ${teams[id].name}${g.pick===id?'<span class="tag">PICK</span>':""}</span><span class="pts">${fmt(score)}</span>
+    </button>`;
+   }).join("")}`;
+   grid.appendChild(box);
+  });
+  root.appendChild(section);
+ });
+ root.querySelectorAll(".pick").forEach(btn=>btn.onclick=()=>{
+  const week=schedule.find(x=>x.week===Number(btn.dataset.week));
+  const game=week.games[Number(btn.dataset.idx)];
+  game.pick=game.pick===btn.dataset.team?null:btn.dataset.team;render();
+ });
+}
+function pct(t){return t.w/(t.w+t.l||1)}
+function h2hValid(group,matches){
+ if(group.length<2)return false;
+ const ids=group.map(t=>t.id);let expected=null;
+ for(let i=0;i<ids.length;i++)for(let j=i+1;j<ids.length;j++){
+  const n=matches.filter(m=>(m[0]===ids[i]&&m[1]===ids[j])||(m[0]===ids[j]&&m[1]===ids[i])).length;
+  if(expected===null)expected=n;else if(n!==expected)return false;
+ }
+ return expected>0;
+}
+function tieSort(group,matches){
+ const valid=h2hValid(group,matches);
+ const h2hPct=team=>{
+  let w=0,n=0;
+  matches.forEach(m=>{
+   if(m[0]===team.id&&group.some(t=>t.id===m[1])){w++;n++}
+   else if(m[1]===team.id&&group.some(t=>t.id===m[0]))n++;
+  });
+  return n?w/n:0;
+ };
+ return group.sort((a,b)=>{
+  if(valid){const d=h2hPct(b)-h2hPct(a);if(Math.abs(d)>1e-9)return d}
+  if(Math.abs(a.pf-b.pf)>.001)return b.pf-a.pf;
+  const ad=a.dw/(a.dw+a.dl||1),bd=b.dw/(b.dw+b.dl||1);
+  if(Math.abs(ad-bd)>1e-9)return bd-ad;
+  return b.pa-a.pa||a.name.localeCompare(b.name);
+ });
+}
+function sortStandings(list,matches){
+ const buckets=new Map();
+ list.forEach(t=>{const k=pct(t).toFixed(8);if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(t)});
+ return [...buckets.entries()].sort((a,b)=>Number(b[0])-Number(a[0])).flatMap(([,group])=>tieSort(group,matches));
+}
+function rankScenario(){
+ const stats={};Object.keys(teams).forEach(id=>stats[id]={...teams[id],id});
+ const matches=historical.map(m=>[...m]);let picks=0;
+ schedule.forEach(week=>week.games.forEach(g=>{
+  if(!g.pick)return;picks++;
+  const winner=g.pick,loser=winner===g.a?g.b:g.a;
+  const a=stats[g.a],b=stats[g.b],wa=stats[winner],lo=stats[loser];
+  wa.w++;lo.l++;wa.pf+=winner===g.a?g.sa:g.sb;lo.pf+=winner===g.a?g.sb:g.sa;
+  a.pa+=g.sb;b.pa+=g.sa;
+  if(a.div===b.div){wa.dw++;lo.dl++}
+  matches.push([winner,loser]);
+ }));
+ const groups={Chalupa:[],Crunchwrap:[]};Object.values(stats).forEach(t=>groups[t.div].push(t));
+ const divisionOrders={};Object.keys(groups).forEach(d=>divisionOrders[d]=sortStandings(groups[d],matches));
+ const champs=Object.values(divisionOrders).map(list=>list[0]);
+ const orderedChamps=sortStandings(champs,matches);
+ const wildcards=sortStandings(Object.values(stats).filter(t=>!champs.some(c=>c.id===t.id)),matches);
+ return {stats,matches,divisionOrders,seeds:[...orderedChamps,...wildcards.slice(0,5)],picks};
+}
+function renderResults(){
+ const {stats,matches,divisionOrders,seeds,picks}=rankScenario();
+ document.getElementById("pickCount").textContent=`${picks} picks`;
+ document.getElementById("standingsTitle").textContent=picks===0?"Current division standings · Week 11":`Division standings · ${picks} picks`;
+ document.getElementById("divisionTables").innerHTML=Object.entries(divisionOrders).map(([division,list])=>`
+ <section class="division"><h3>${division}</h3><table><thead><tr><th>#</th><th>Team</th><th>W-L</th><th>Playoff</th></tr></thead><tbody>
+ ${list.map((t,i)=>{const seed=seeds.findIndex(x=>x.id===t.id);return `<tr><td class="rank">${i+1}</td><td><span class="teamname">${t.emoji} ${t.name}</span></td><td>${t.w}-${t.l}</td><td><span class="seed-status ${seed<0?"out":""}">${seed<0?"OUT":"IN #"+(seed+1)}</span></td></tr>`}).join("")}
+ </tbody></table></section>`).join("");
+ const teamAt=n=>seeds[n-1]?`${seeds[n-1].emoji} ${seeds[n-1].name}`:"—";
+ document.getElementById("bracket").innerHTML=`
+ <div class="round"><h3>Week 15 · Opening round</h3>
+  <div class="bracket-game bye"><span><b>#1 ${teamAt(1)}</b></span><span>BYE</span></div>
+  <div class="bracket-game"><span>#2 ${teamAt(2)}</span><b>vs</b><span>#7 ${teamAt(7)}</span></div>
+  <div class="bracket-game"><span>#3 ${teamAt(3)}</span><b>vs</b><span>#6 ${teamAt(6)}</span></div>
+  <div class="bracket-game"><span>#4 ${teamAt(4)}</span><b>vs</b><span>#5 ${teamAt(5)}</span></div>
+ </div>
+ <div class="round"><h3>Week 16 · Semifinals</h3>
+  <div class="bracket-game"><span>#1 ${teamAt(1)}</span><b>vs</b><span>Winner #4 / #5</span></div>
+  <div class="bracket-game"><span>Winner #2 / #7</span><b>vs</b><span>Winner #3 / #6</span></div>
+ </div>
+ <div class="round"><h3>Weeks 17–18 · Championship</h3><div class="bracket-game"><span>Semifinal winners</span><b>→</b><span>League title</span></div></div>`;
+}
+function render(){renderSchedule();renderResults()}
+document.getElementById("projected").onclick=()=>{schedule.forEach(w=>w.games.forEach(g=>g.pick=g.sa>=g.sb?g.a:g.b));render()};
+document.getElementById("clear").onclick=()=>{schedule.forEach(w=>w.games.forEach(g=>g.pick=null));render()};
+render();
+</script>
+</body>
+</html>
